@@ -1,5 +1,5 @@
 require 'aws-sdk'
-#checking frontend layer        
+#checking frontend layer
 if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}"
 
 		%w[ /var/www/frontend  /var/www/frontend/release ].each do |path|
@@ -9,7 +9,7 @@ if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend
     		  mode '0755'
   		end
 	        end
-	
+
 	#Getting time
 	time = Time.now.strftime("%Y%m%d%H%M%S")
         #create release directory with timestamp
@@ -25,7 +25,11 @@ if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend
 	# Set bucket and object name
 	obj = s3.buckets["#{node[:submodules][:frontend][:bucket_name]}"].objects["#{node[:submodules][:frontend][:file_name]}"]
 	# Read content to variable
-	file_content = obj.read
+        if !node[:submodules][:frontend][:version_id].empty?
+        file_content = obj.read(:version_id=>"#{node[:submodules][:frontend][:version_id]}")
+        else
+        file_content = obj.read
+        end
 	# Write content to file
 	file "/var/www/frontend/release/#{time}/#{node[:submodules][:frontend][:file_name]}" do
   	owner 'root'
@@ -86,7 +90,7 @@ node[:submodules][:frontend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d  -h "#{node[:submodules][:frontend][:host_name]}"  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:my_docker_image]} 
+      docker run -d  -h "#{node[:submodules][:frontend][:host_name]}"  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:my_docker_image]}
     EOH
   end
 end
@@ -131,7 +135,12 @@ s3 = AWS::S3.new
 # Set bucket and object name
 obj = s3.buckets["#{node[:submodules][:backend][:bucket_name]}"].objects["#{node[:submodules][:backend][:file_name]}"]
 # Read content to variable
-file_content = obj.read
+if !node[:submodules][:backend][:version_id].empty?
+        file_content = obj.read(:version_id=>"#{node[:submodules][:backend][:version_id]}")
+        else
+        file_content = obj.read
+        end
+
 # Write content to file
 file "/var/www/backend/release/#{time}/#{node[:submodules][:backend][:file_name]}" do
   owner 'root'
@@ -173,12 +182,11 @@ node[:submodules][:backend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d -p 300#{index}:3000 --name=app#{index} -v /var/www/backend/current:/var/www  #{node[:submodules][:my_docker_image]} 
+      docker run -d -p 300#{index}:3000 --name=app#{index} -v /var/www/backend/current:/var/www  #{node[:submodules][:my_docker_image]}
     EOH
   end
 end
-  
+
 else
 Chef::Log.warn("Wrong layer selection")
 end
-

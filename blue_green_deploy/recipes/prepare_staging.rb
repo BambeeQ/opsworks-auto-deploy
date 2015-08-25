@@ -1,5 +1,23 @@
 require 'aws-sdk'
-if  node[:opsworks][:layers]["#{node[:layer]}"][:instances].first[0].to_s == node["opsworks"]["instance"]["hostname"]
+
+script "kill_all_containers" do
+  interpreter "bash"
+  user "root"
+  code <<-EOH
+        count=`docker ps -aq | wc -l`
+        if [ $count -eq 0 ]
+        then
+        echo "no continers to remove"
+        else
+        docker ps -aq | xargs -n 1 -t docker stop
+        docker ps -aq | xargs -n 1 -t docker rm
+        fi
+  EOH
+end
+
+
+#checking frontend layer
+if  node[:opsworks][:layers]["#{node[:submodules][:frontend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
 
 bash "Drop_stage_mongodb" do
   user "root"
@@ -19,7 +37,6 @@ export PGPASSWORD="#{node[:pg_admin_password]}"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
 mkdir -p #{node[:stage_prepare_dir]}
-mkdir -p #{node[:stage_prepare_dir]}/backend
 mkdir -p #{node[:stage_prepare_dir]}/frontend
 EOH
 end
@@ -34,7 +51,6 @@ execute 'Pg_backup' do
   action :run
 end
 
-
 execute 'Pg_Restore' do
   cwd "#{node[:stage_prepare_dir]}"
   command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
@@ -43,37 +59,65 @@ execute 'Pg_Restore' do
   action :run
 end
 
-script "kill_all_containers" do
-  interpreter "bash"
-  user "root"
-  code <<-EOH
-        count=`docker ps -aq | wc -l`
-        if [ $count -eq 0 ]
-        then
-        echo "no continers to remove"
+ %w[ /var/www/frontend  /var/www/frontend/release ].each do |path|
+                directory path do
+                  owner 'root'
+                  group 'root'
+                  mode '0755'
+                end
+                end
+
+
+ #Getting time
+        time = Time.now.strftime("%Y%m%d%H%M%S")
+        #create release directory with timestamp
+        directory "/var/www/frontend/release/#{time}" do
+          owner 'root'
+          group 'root'
+          mode '0755'
+          action :create
+        end
+
+        #Deploy code to release directory
+        s3 = AWS::S3.new
+        # Set bucket and object name
+        obj = s3.buckets["#{node[:submodules][:frontend][:bucket_name]}"].objects["#{node[:submodules][:frontend][:file_name]}"]
+        # Read content to variable
+        if !node[:submodules][:frontend][:version_id].empty?
+        file_content = obj.read(:version_id=>"#{node[:submodules][:frontend][:version_id]}")
         else
-        docker ps -aq | xargs -n 1 -t docker stop
-        docker ps -aq | xargs -n 1 -t docker rm
-        fi
-  EOH
-end
-
-
-#Deploy code to release directory
-s3 = AWS::S3.new
- # Set bucket and object name
-obj = s3.buckets["#{node[:submodules][:frontend][:bucket_name]}"].objects["#{node[:submodules][:frontend][:file_name]}"]
-# Read content to variable
-file_content = obj.read
-# Write content to file
-        file "#{node[:stage_prepare_dir]}/frontend/#{node[:submodules][:frontend][:file_name]}" do
+        file_content = obj.read
+        end
+        # Write content to file
+        file "/var/www/frontend/release/#{time}/#{node[:submodules][:frontend][:file_name]}" do
         owner 'root'
           group 'root'
           content file_content
           action :create
         end
 
-	template "#{node[:stage_prepare_dir]}/frontend/start.sh" do
+
+#Clear old release
+        bash "Clear old release" do
+          user "root"
+          cwd "/var/www/frontend/release/"
+          code <<-EOT
+          (ls -t|head -n 5;ls)|sort|uniq -u|xargs rm -rf
+          EOT
+        end
+
+        #Extract deploy code
+        bash "release_updates" do
+          user "root"
+          group "root"
+          cwd "/var/www/frontend/release/#{time}"
+          code <<-EOH
+          tar -xvf #{node[:submodules][:frontend][:file_name]}
+          rm -rf /var/www/frontend/release/#{time}/#{node[:submodules][:frontend][:file_name]}
+          EOH
+        end
+        #Create startup script with environment variables
+        template "/var/www/frontend/release/#{time}/start.sh" do
             source "start.erb"
             user "root"
             group "root"
@@ -89,18 +133,45 @@ file_content = obj.read
         end
 
 
-bash "Frontend_updates" do
-     user "root"
-     group "root"
-     cwd "#{node[:stage_prepare_dir]}/frontend"
-     code <<-EOH
-     tar -xvf #{node[:submodules][:frontend][:file_name]}
-     EOH
+link "/var/www/frontend/current" do
+  action :delete
+  only_if "test -L /var/www/frontend/current"
+end
+
+link "/var/www/frontend/current" do
+  to "/var/www/frontend/release/#{time}"
 end
 
 
+  script "run_app_container" do
+    interpreter "bash"
+    user "root"
+    code <<-EOH
+      docker run -d  -h "#{node[:submodules][:frontend][:host_name]}"  -v /var/www/frontend/current/:/var/www -p 80:3000 --name=app0  #{node[:submodules][:my_docker_image]}
+    EOH
+  end
 
-template "#{node[:stage_prepare_dir]}/backend/start.sh" do
+
+elsif  node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
+then
+
+%w[ /var/www/backend  /var/www/backend/release ].each do |path|
+  directory path do
+    owner 'root'
+    group 'root'
+    mode '0755'
+  end
+end
+
+time = Time.now.strftime("%Y%m%d%H%M%S")
+directory "/var/www/backend/release/#{time}" do
+  owner 'root'
+  group 'root'
+  mode '0755'
+  action :create
+end
+
+template "/var/www/backend/release/#{time}/start.sh" do
     source "start.erb"
     user "root"
     group "root"
@@ -111,60 +182,61 @@ template "#{node[:stage_prepare_dir]}/backend/start.sh" do
 )
   end
 
-script "run_app_container" do
-    interpreter "bash"
-    user "root"
-    code <<-EOH
-      docker run -d -p 3000:3000 --name=app0 -v #{node[:stage_prepare_dir]}/frontend/:/var/www  #{node[:submodules][:my_docker_image]}
-    EOH
-  end
-
 s3 = AWS::S3.new
 # Set bucket and object name
 obj = s3.buckets["#{node[:submodules][:backend][:bucket_name]}"].objects["#{node[:submodules][:backend][:file_name]}"]
 # Read content to variable
+if !node[:submodules][:backend][:version_id].empty?
+file_content = obj.read(:version_id=>"#{node[:submodules][:backend][:version_id]}")
+else
 file_content = obj.read
+end
 # Write content to file
-file "#{node[:stage_prepare_dir]}/backend/#{node[:submodules][:backend][:file_name]}" do
+file "/var/www/backend/release/#{time}/#{node[:submodules][:backend][:file_name]}" do
   owner 'root'
   group 'root'
   content file_content
   action :create
 end
 
-bash "Backend_updates" do
-     user "root"
-     group "root"
-     cwd "#{node[:stage_prepare_dir]}/backend"
-     code <<-EOH
-     tar -xvf #{node[:submodules][:backend][:file_name]}
-     npm install  knex liftoff coffee-script interpret commander minimist v8flags chalk tildify
-     EOH
+bash "Clear old release" do
+  user "root"
+  cwd "/var/www/backend/release"
+  code <<-EOT
+  (ls -t|head -n 5;ls)|sort|uniq -u|xargs rm -rf
+  EOT
 end
 
-script "run_app_container" do
+
+bash "release_updates" do
+  user "root"
+  group "root"
+  cwd "/var/www/backend/release/#{time}"
+  code <<-EOH
+  tar -xvzf #{node[:submodules][:backend][:file_name]}
+  rm -rf /var/www/backend/release/#{time}/#{node[:submodules][:backend][:file_name]}
+  npm install  knex liftoff interpret commander minimist v8flags chalk tildify
+EOH
+end
+
+link "/var/www/backend/current" do
+  action :delete
+  only_if "test -L /var/www/backend/current"
+end
+
+
+link "/var/www/backend/current" do
+  to "/var/www/backend/release/#{time}"
+end
+
+  script "run_app_container" do
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d -p 3001:3000 --name=app1 -v #{node[:stage_prepare_dir]}/backend/:/var/www  #{node[:submodules][:my_docker_image]}
-      docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
+      docker run -d -p 3001:3000 --name=app1 -v /var/www/backend/current:/var/www  #{node[:submodules][:my_docker_image]}
+     docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
     EOH
   end
-
-script "kill_all_containers" do
-  interpreter "bash"
-  user "root"
-  code <<-EOH
-        count=`docker ps -aq | wc -l`
-        if [ $count -eq 0 ]
-        then
-        echo "no continers to remove"
-        else
-        docker ps -aq | xargs -n 1 -t docker stop
-        docker ps -aq | xargs -n 1 -t docker rm
-        fi
-  EOH
-end
 
 else
 Chef::Log.warn("Wrong layer selection")
