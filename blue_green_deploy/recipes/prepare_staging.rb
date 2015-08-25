@@ -36,8 +36,6 @@ code <<-EOH
 export PGPASSWORD="#{node[:pg_admin_password]}"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
-mkdir -p #{node[:stage_prepare_dir]}
-mkdir -p #{node[:stage_prepare_dir]}/frontend
 EOH
 end
 
