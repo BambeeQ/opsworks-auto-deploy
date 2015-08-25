@@ -19,6 +19,8 @@ export PGPASSWORD="#{node[:pg_admin_password]}"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
 psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
 mkdir -p #{node[:stage_prepare_dir]}
+mkdir -p #{node[:stage_prepare_dir]}/backend
+mkdir -p #{node[:stage_prepare_dir]}/frontend
 EOH
 end
 
@@ -41,6 +43,20 @@ execute 'Pg_Restore' do
   action :run
 end
 
+script "kill_all_containers" do
+  interpreter "bash"
+  user "root"
+  code <<-EOH
+        count=`docker ps -aq | wc -l`
+        if [ $count -eq 0 ]
+        then
+        echo "no continers to remove"
+        else
+        docker ps -aq | xargs -n 1 -t docker stop
+        docker ps -aq | xargs -n 1 -t docker rm
+        fi
+  EOH
+end
 
 
 #Deploy code to release directory
@@ -50,14 +66,14 @@ obj = s3.buckets["#{node[:submodules][:frontend][:bucket_name]}"].objects["#{nod
 # Read content to variable
 file_content = obj.read
 # Write content to file
-        file "#{node[:stage_prepare_dir]}/#{node[:submodules][:frontend][:file_name]}" do
+        file "#{node[:stage_prepare_dir]}/frontend/#{node[:submodules][:frontend][:file_name]}" do
         owner 'root'
           group 'root'
           content file_content
           action :create
         end
 
-	template "#{node[:stage_prepare_dir]}/start.sh" do
+	template "#{node[:stage_prepare_dir]}/frontend/start.sh" do
             source "start.erb"
             user "root"
             group "root"
@@ -76,20 +92,15 @@ file_content = obj.read
 bash "Frontend_updates" do
      user "root"
      group "root"
-     cwd "#{node[:stage_prepare_dir]}"
+     cwd "#{node[:stage_prepare_dir]}/frontend"
      code <<-EOH
      tar -xvf #{node[:submodules][:frontend][:file_name]}
-     rm -rf #{node[:stage_prepare_dir]}/#{node[:submodules][:frontend][:file_name]}
-     sh -x start.sh &
-     sleep 15s
-     kill -9 `pgrep -f start.sh`
-     rm  -rf #{node[:stage_prepare_dir]}/*
      EOH
 end
 
 
 
-template "#{node[:stage_prepare_dir]}/start.sh" do
+template "#{node[:stage_prepare_dir]}/backend/start.sh" do
     source "start.erb"
     user "root"
     group "root"
@@ -100,6 +111,13 @@ template "#{node[:stage_prepare_dir]}/start.sh" do
 )
   end
 
+script "run_app_container" do
+    interpreter "bash"
+    user "root"
+    code <<-EOH
+      docker run -d -p 3000:3000 --name=app0 -v #{node[:stage_prepare_dir]}/frontend/:/var/www  #{node[:submodules][:my_docker_image]}
+    EOH
+  end
 
 s3 = AWS::S3.new
 # Set bucket and object name
@@ -107,7 +125,7 @@ obj = s3.buckets["#{node[:submodules][:backend][:bucket_name]}"].objects["#{node
 # Read content to variable
 file_content = obj.read
 # Write content to file
-file "#{node[:stage_prepare_dir]}/#{node[:submodules][:backend][:file_name]}" do
+file "#{node[:stage_prepare_dir]}/backend/#{node[:submodules][:backend][:file_name]}" do
   owner 'root'
   group 'root'
   content file_content
@@ -120,14 +138,37 @@ bash "Backend_updates" do
      cwd "#{node[:stage_prepare_dir]}"
      code <<-EOH
      tar -xvf #{node[:submodules][:backend][:file_name]}
-     rm -rf #{node[:stage_prepare_dir]}/#{node[:submodules][:backend][:file_name]}
+     rm -rf #{node[:stage_prepare_dir]}/backend/#{node[:submodules][:backend][:file_name]}
      sh -x start.sh &
      ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
      sleep 15s
-     kill -9 `pgrep -f start.sh`
-     rm  -rf #{node[:stage_prepare_dir]}/*
      EOH
 end
+
+script "run_app_container" do
+    interpreter "bash"
+    user "root"
+    code <<-EOH
+      docker run -d -p 3001:3000 --name=app0 -v #{node[:stage_prepare_dir]}/backend/:/var/www  #{node[:submodules][:my_docker_image]}
+      docker exec app0 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
+    EOH
+  end
+
+script "kill_all_containers" do
+  interpreter "bash"
+  user "root"
+  code <<-EOH
+        count=`docker ps -aq | wc -l`
+        if [ $count -eq 0 ]
+        then
+        echo "no continers to remove"
+        else
+        docker ps -aq | xargs -n 1 -t docker stop
+        docker ps -aq | xargs -n 1 -t docker rm
+        fi
+  EOH
+end
+
 else
 Chef::Log.warn("Wrong layer selection")
 end

@@ -1,7 +1,7 @@
 # Pull latest images
-if node[:env] == 'stage'
+if node[:env] == 'staging'
 
-if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layers]}"
+if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}"
   template "#{node[:submodules][:frontend][:dir]}/Dockerfile" do
     cookbook "submodules"
     source "Dockerfile.erb"
@@ -30,7 +30,7 @@ if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend
       docker build -t #{node[:submodules][:docker_image_name]} .
     EOH
   end
-elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layers]}"
+elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 then
   template "#{node[:submodules][:backend][:dir]}/Dockerfile" do
     source "Dockerfile_be.erb"
@@ -61,6 +61,5 @@ then
   end
 else
 Chef::Log.warn("Wrong layer selection")
-
 end
 end

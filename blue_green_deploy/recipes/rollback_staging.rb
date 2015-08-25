@@ -1,4 +1,4 @@
-if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layers]}"
+if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}"
 	template "/var/www/frontend/current/start.sh" do
             source "start.erb"
             user "root"
@@ -18,12 +18,12 @@ node[:submodules][:frontend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker restart app#{index}  
+      docker restart app#{index}
     EOH
   end
 end
 
-else if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layers]}"
+else if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 then
         template "/var/www/frontend/release/current/start.sh" do
             source "start.erb"
@@ -40,7 +40,7 @@ node[:submodules][:frontend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker restart app#{index}  
+      docker restart app#{index}
     EOH
   end
 end

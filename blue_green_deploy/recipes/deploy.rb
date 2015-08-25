@@ -1,6 +1,6 @@
 require 'aws-sdk'
 #checking frontend layer        
-if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layers]}"
+if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}"
 
 		%w[ /var/www/frontend  /var/www/frontend/release ].each do |path|
   		directory path do
@@ -92,7 +92,7 @@ node[:submodules][:frontend][:instance_count].times do |index|
 end
 
 
-elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layers]}"
+elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 then
 
 %w[ /var/www/backend  /var/www/backend/release ].each do |path|

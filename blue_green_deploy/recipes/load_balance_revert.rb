@@ -22,5 +22,3 @@ execute "echo 'checking if nginx is not running - if so start it'" do
   not_if "pgrep nginx"
   notifies :start, "service[nginx]"
 end
-
-
