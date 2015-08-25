@@ -3,25 +3,6 @@ service "nginx" do
   action :nothing # only define so that it can be restarted if the config changed
 end
 
-bash "Drop_stage_mongodb" do
-  user "root"
-  group "root"
-  code <<-EOH
-  mongo #{node[:drop_mongodb_url]} -u #{node[:mongodb_admin_username]} -p #{node[:mongodb_admin_password]} --authenticationDatabase admin <<EOF
-  db.dropDatabase()
-  EOF
-EOH
-end
-
-bash "Drop_stage_postgres" do
-  user "root"
-  group "root"
-  code <<-EOH
-  export PGPASSWORD="#{node[:pg_admin_password]}"
- psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
-  psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
-EOH
-end
 
 template "/etc/nginx/#{node[:stage_domain_name]}.upstream" do
   cookbook "nginx"
