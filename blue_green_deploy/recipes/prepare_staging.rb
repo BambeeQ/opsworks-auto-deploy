@@ -11,6 +11,18 @@ bash "Drop_stage_mongodb" do
 EOH
 end
 
+bash "Drop_stage_postgres" do
+user "root"
+group "root"
+code <<-EOH
+export PGPASSWORD="#{node[:pg_admin_password]}"
+psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
+psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
+mkdir -p #{node[:stage_prepare_dir]}
+EOH
+end
+
+
 
 execute 'Pg_backup' do
   cwd "#{node[:stage_prepare_dir]}"
