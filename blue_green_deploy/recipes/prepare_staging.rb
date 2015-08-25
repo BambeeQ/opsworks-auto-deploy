@@ -149,8 +149,8 @@ script "run_app_container" do
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d -p 3001:3000 --name=app0 -v #{node[:stage_prepare_dir]}/backend/:/var/www  #{node[:submodules][:my_docker_image]}
-      docker exec app0 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
+      docker run -d -p 3001:3000 --name=app1 -v #{node[:stage_prepare_dir]}/backend/:/var/www  #{node[:submodules][:my_docker_image]}
+      docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
     EOH
   end
 
