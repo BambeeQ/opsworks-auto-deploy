@@ -135,13 +135,9 @@ end
 bash "Backend_updates" do
      user "root"
      group "root"
-     cwd "#{node[:stage_prepare_dir]}"
+     cwd "#{node[:stage_prepare_dir]}/backend"
      code <<-EOH
      tar -xvf #{node[:submodules][:backend][:file_name]}
-     rm -rf #{node[:stage_prepare_dir]}/backend/#{node[:submodules][:backend][:file_name]}
-     sh -x start.sh &
-     ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
-     sleep 15s
      EOH
 end
 
