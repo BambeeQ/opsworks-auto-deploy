@@ -29,7 +29,6 @@ bash "backup_and_restore_pg_db" do
   code <<-EOH
   export PGPASSWORD="#{node[:pg_admin_password]}"
   pg_dump -h #{node[:pg_server_ip]}  -Fc -o -U  #{node[:pg_admin_username]} #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql
-  pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql
   EOH
 end
 
