@@ -23,17 +23,10 @@ end
 
 execute 'Pg_Restore' do
   cwd "#{node[:stage_prepare_dir]}"
-<<<<<<< HEAD
   command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
   environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
   user "root"
   action :run
-=======
-  code <<-EOH
-  export PGPASSWORD="#{node[:pg_admin_password]}"
-  pg_dump -h #{node[:pg_server_ip]}  -Fc -o -U  #{node[:pg_admin_username]} #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql
-  EOH
->>>>>>> 083c1d07214a79b9ef7e8c22fc39f8f6de83487e
 end
 
 
