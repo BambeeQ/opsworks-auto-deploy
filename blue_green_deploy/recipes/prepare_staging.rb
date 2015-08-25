@@ -138,6 +138,7 @@ bash "Backend_updates" do
      cwd "#{node[:stage_prepare_dir]}/backend"
      code <<-EOH
      tar -xvf #{node[:submodules][:backend][:file_name]}
+     npm install  knex liftoff coffee-script interpret commander minimist v8flags chalk tildify
      EOH
 end
 
