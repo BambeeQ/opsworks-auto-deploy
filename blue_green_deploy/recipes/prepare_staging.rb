@@ -22,16 +22,24 @@ bash "Drop_stage_postgres" do
 EOH
 end
 
-bash "backup_and_restore_pg_db" do
-  user "root"
-  group "root"
+execute 'Pg_backup' do
   cwd "#{node[:stage_prepare_dir]}"
-  code <<-EOH
-  export PGPASSWORD="#{node[:pg_admin_password]}"
-  pg_dump -h #{node[:pg_server_ip]}  -Fc -o -U  #{node[:pg_admin_username]} #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql
-  pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql
-  EOH
+  command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_admin_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
+  user "root"
+  action :run
 end
+
+
+execute 'Pg_Restore' do
+  cwd "#{node[:stage_prepare_dir]}"
+  command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
+  user "root"
+  action :run
+end
+
+
 
 #Deploy code to release directory
 s3 = AWS::S3.new
