@@ -49,34 +49,6 @@ bash "Drop_stage_mongodb" do
 EOH
 end
 
-bash "Drop_stage_postgres" do
-user "root"
-group "root"
-code <<-EOH
-export PGPASSWORD="#{node[:pg_admin_password]}"
-psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
-psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
-EOH
-end
-
-
-
-execute 'Pg_backup' do
-  cwd "/var/www/frontend/release/#{time}"
-  command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_prod_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
-  environment 'PGPASSWORD' => "#{node[:pg_prod_password]}"
-  user "root"
-  action :run
-end
-
-execute 'Pg_Restore' do
-  cwd "/var/www/frontend/release/#{time}"
-  command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_stage_username]} --no-owner --no-privileges --no-tablespaces -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
-  environment 'PGPASSWORD' => "#{node[:pg_stage_password]}"
-  user "root"
-  action :run
-end
-
 
         #Deploy code to release directory
         s3 = AWS::S3.new
@@ -171,6 +143,38 @@ directory "/var/www/backend/release/#{time}" do
   action :create
 end
 
+
+bash "Drop_stage_postgres" do
+user "root"
+group "root"
+code <<-EOH
+export PGPASSWORD="#{node[:pg_admin_password]}"
+psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "DROP DATABASE #{node[:pg_stage_db]};"
+psql -h #{node[:pg_server_ip]} -d postgres -U #{node[:pg_admin_username]} -c "CREATE DATABASE #{node[:pg_stage_db]};"
+EOH
+end
+
+
+
+execute 'Pg_backup' do
+  cwd "/var/www/backend/release/#{time}"
+  command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_prod_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_prod_password]}"
+  user "root"
+  action :run
+end
+
+execute 'Pg_Restore' do
+  cwd "/var/www/backend/release/#{time}"
+  command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_stage_username]} --no-owner --no-privileges --no-tablespaces -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_stage_password]}"
+  user "root"
+  action :run
+end
+
+
+
+
 template "/var/www/backend/release/#{time}/start.sh" do
     source "start.erb"
     user "root"
@@ -234,7 +238,7 @@ end
     user "root"
     code <<-EOH
       docker run -d -p 3001:3000 --name=app1 -v /var/www/backend/current:/var/www  #{node[:submodules][:my_docker_image]}
-     docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
+      docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
     EOH
   end
 
