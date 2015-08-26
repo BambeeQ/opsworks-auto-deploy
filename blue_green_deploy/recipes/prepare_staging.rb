@@ -63,16 +63,16 @@ end
 
 execute 'Pg_backup' do
   cwd "/var/www/frontend/release/#{time}"
-  command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_admin_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
-  environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
+  command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_prod_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_prod_password]}"
   user "root"
   action :run
 end
 
 execute 'Pg_Restore' do
   cwd "/var/www/frontend/release/#{time}"
-  command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
-  environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
+  command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_stage_username]} --no-owner --no-privileges --no-tablespaces -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
+  environment 'PGPASSWORD' => "#{node[:pg_stage_password]}"
   user "root"
   action :run
 end
