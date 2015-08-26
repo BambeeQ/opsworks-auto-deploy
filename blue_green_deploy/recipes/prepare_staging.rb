@@ -19,6 +19,26 @@ end
 #checking frontend layer
 if  node[:opsworks][:layers]["#{node[:submodules][:frontend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
 
+%w[ /var/www/frontend  /var/www/frontend/release ].each do |path|
+                directory path do
+                  owner 'root'
+                  group 'root'
+                  mode '0755'
+                end
+                end
+
+
+ #Getting time
+        time = Time.now.strftime("%Y%m%d%H%M%S")
+        #create release directory with timestamp
+        directory "/var/www/frontend/release/#{time}" do
+          owner 'root'
+          group 'root'
+          mode '0755'
+          action :create
+        end
+
+
 bash "Drop_stage_mongodb" do
   user "root"
   group "root"
@@ -42,7 +62,7 @@ end
 
 
 execute 'Pg_backup' do
-  cwd "#{node[:stage_prepare_dir]}"
+  cwd "/var/www/frontend/release/#{time}"
   command "pg_dump -h  #{node[:pg_server_ip]}  -Fc -o -U #{node[:pg_admin_username]} -T -d #{node[:pg_prod_db]} > #{node[:pg_prod_db]}.sql"
   environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
   user "root"
@@ -50,31 +70,13 @@ execute 'Pg_backup' do
 end
 
 execute 'Pg_Restore' do
-  cwd "#{node[:stage_prepare_dir]}"
+  cwd "/var/www/frontend/release/#{time}"
   command "pg_restore -h #{node[:pg_server_ip]}  -U #{node[:pg_admin_username]} -n public -d #{node[:pg_stage_db]} < #{node[:pg_prod_db]}.sql"
   environment 'PGPASSWORD' => "#{node[:pg_admin_password]}"
   user "root"
   action :run
 end
 
- %w[ /var/www/frontend  /var/www/frontend/release ].each do |path|
-                directory path do
-                  owner 'root'
-                  group 'root'
-                  mode '0755'
-                end
-                end
-
-
- #Getting time
-        time = Time.now.strftime("%Y%m%d%H%M%S")
-        #create release directory with timestamp
-        directory "/var/www/frontend/release/#{time}" do
-          owner 'root'
-          group 'root'
-          mode '0755'
-          action :create
-        end
 
         #Deploy code to release directory
         s3 = AWS::S3.new
