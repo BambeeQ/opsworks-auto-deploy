@@ -23,9 +23,9 @@ node[:submodules][:frontend][:instance_count].times do |index|
     EOH
   end
 end
-else if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
+elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 then
-template "/var/www/frontend/current/start.sh" do
+template "/var/www/backend/current/start.sh" do
     source "start.erb"
     user "root"
     group "root"

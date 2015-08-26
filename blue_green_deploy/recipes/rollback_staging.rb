@@ -23,9 +23,9 @@ node[:submodules][:frontend][:instance_count].times do |index|
   end
 end
 
-else if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
+elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 then
-        template "/var/www/frontend/release/current/start.sh" do
+        template "/var/www/backend/release/current/start.sh" do
             source "start.erb"
             user "root"
             group "root"
@@ -35,7 +35,7 @@ then
              )
         end
 
-node[:submodules][:frontend][:instance_count].times do |index|
+node[:submodules][:backend][:instance_count].times do |index|
   script "run_app_#{index}_container" do
     interpreter "bash"
     user "root"
