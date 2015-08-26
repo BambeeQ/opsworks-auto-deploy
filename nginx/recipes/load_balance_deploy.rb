@@ -50,6 +50,9 @@ link "/etc/nginx/sites-enabled/#{node[:stage_domain_name]}.conf" do
   to "/etc/nginx/sites-available/#{node[:stage_domain_name]}.conf"
 end
 
+execute "echo 'nginx reload'" do
+  notifies :reload, "service[nginx]"
+end
 
 execute "echo 'checking if nginx is not running - if so start it'" do
   not_if "pgrep nginx"
