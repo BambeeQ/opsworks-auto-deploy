@@ -239,6 +239,11 @@ end
     code <<-EOH
       docker run -d -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -p 3001:3000 --name=app1 -v /var/www/backend/current:/var/www  #{node[:submodules][:backend_image]} /var/www/start.sh
       docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
+      if [ $? = 1 ]
+      then
+      docker restart app1
+      fi
+
     EOH
   end
 
