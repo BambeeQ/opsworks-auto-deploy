@@ -185,6 +185,10 @@ node[:submodules][:backend][:instance_count].times do |index|
     user "root"
     code <<-EOH
       docker run -d -h #{node["opsworks"]["instance"]["hostname"][9,20]}-#{index+1} -p 300#{index}:3000 --name=app#{index} -v /var/www/backend/current:/var/www  #{node[:submodules][:backend_image]} /var/www/start.sh
+     if [ $? = 1 ]
+      then
+      docker restart app#{index}
+      fi
     EOH
   end
 end
