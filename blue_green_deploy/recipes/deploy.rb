@@ -85,12 +85,14 @@ link "/var/www/frontend/current" do
 end
 
 
+
+node["opsworks"]["instance"]["hostname"]
 node[:submodules][:frontend][:instance_count].times do |index|
   script "run_app_#{index}_container" do
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d  -h "#{node[:submodules][:frontend][:host_name]}"  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:my_docker_image]}
+      docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}-#{index+1}  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:frontend_image]}
     EOH
   end
 end
@@ -182,7 +184,7 @@ node[:submodules][:backend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d -p 300#{index}:3000 --name=app#{index} -v /var/www/backend/current:/var/www  #{node[:submodules][:my_docker_image]}
+      docker run -d -h #{node["opsworks"]["instance"]["hostname"][9,20]}-#{index+1} -p 300#{index}:3000 --name=app#{index} -v /var/www/backend/current:/var/www  #{node[:submodules][:backend_image]}
     EOH
   end
 end
