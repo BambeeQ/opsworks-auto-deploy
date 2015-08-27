@@ -92,7 +92,7 @@ node[:submodules][:frontend][:instance_count].times do |index|
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}-#{index+1}  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:frontend_image]} pm2 /var/www/start.sh --watch --no-daemon
+      docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}-#{index+1}  -v /var/www/frontend/current/:/var/www -p 8#{index}:3000 --name=app#{index}  #{node[:submodules][:frontend_image]} pm2 start -x /var/www/start.sh --watch --no-daemon
     EOH
   end
 end

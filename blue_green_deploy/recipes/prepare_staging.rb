@@ -119,7 +119,7 @@ end
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -v /var/www/frontend/current/:/var/www -p 80:3000 --name=app0  #{node[:submodules][:frontend_image]}
+      docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -v /var/www/frontend/current/:/var/www -p 80:3000 --name=app0  #{node[:submodules][:frontend_image]} pm2 start -x /var/www/start.sh --watch --no-daemon
     EOH
   end
 
@@ -237,7 +237,7 @@ end
     interpreter "bash"
     user "root"
     code <<-EOH
-      docker run -d -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -p 3001:3000 --name=app1 -v /var/www/backend/current:/var/www  #{node[:submodules][:backend_image]}
+      docker run -d -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -p 3001:3000 --name=app1 -v /var/www/backend/current:/var/www  #{node[:submodules][:backend_image]} /var/www/start.sh
       docker exec app1 ./swf/core/bin/knex migrate:latest --env #{node[:db_migration_env]}
     EOH
   end
