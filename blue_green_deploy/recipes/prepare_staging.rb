@@ -120,6 +120,11 @@ end
     user "root"
     code <<-EOH
       docker run -d  -h #{node["opsworks"]["instance"]["hostname"][9,20]}  -v /var/www/frontend/current/:/var/www -p 80:3000 --name=app0  #{node[:submodules][:frontend_image]} pm2 start -x /var/www/start.sh --watch --no-daemon
+      if [ $? = 1 ]
+      then
+      docker restart app0
+      fi
+
     EOH
   end
 
