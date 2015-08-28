@@ -9,7 +9,7 @@ script "kill_all_containers" do
 	then
 	echo "no continers to remove"
 	else
-        docker ps -aq | xargs -I{} docker exec {} pm2 sendSignal SIGTERM all
+        docker ps -aq | xargs -I{} docker exec {} pm2 sendSignal SIGQUIT all
         docker ps -aq | xargs -I{} docker exec {} pm2 stop all 
 	fi
   EOH
