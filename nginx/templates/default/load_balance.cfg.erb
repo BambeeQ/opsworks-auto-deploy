@@ -11,7 +11,8 @@ server {
         proxy_pass http://<%= node[:stage_upstream_cluster] %>;
 	proxy_set_header Upgrade $http_upgrade;
     	proxy_set_header Connection "upgrade";
+        access_log /var/log/nginx/<%= @server_name %>.log;
+        error_log /var/log/nginx/<%= @server_name %>.error error;
         }
 
 }
-
