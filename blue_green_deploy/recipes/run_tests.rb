@@ -1,8 +1,14 @@
 require 'chef'
-
-rest = Chef::REST.new("#{node[:stage_ghostscript_url]}")
-nodes = rest.get_rest("#{node[:stage_ghostscript_url]}")
+passing = false
+node[:stage_ghostscript_url].each do |url|
+rest = Chef::REST.new("#{url}")
+nodes = rest.get_rest("#{url}")
 data = nodes['data']
+passing = checkPassing(data)
+  if passing == false
+    break
+  end
+end
 def checkPassing(data)
  data.each do |value|
          if value['passing'] == false
@@ -10,8 +16,6 @@ def checkPassing(data)
       end
   end
   return true
-end
-passing = checkPassing(data)
 
 if "#{node[:ignore_failed_tests]}" == 'true'
 Chef::Log.info("Testing")
@@ -25,3 +29,4 @@ else
  Chef::Application.fatal!("failed")
 end
 end
+
