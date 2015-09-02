@@ -1,3 +1,4 @@
+#!/bin/bash
 PM2_KILL_TIMEOUT=300000 pm2 ping
 <% if node[:opsworks][:instance][:layers][0]==node[:submodules][:frontend][:layer] -%>
 MONGO_URL=<%= @mongo_url %> ROOT_URL=<%= @root_url %> MAIL_URL=<%= @mail_url %> PORT=<%= @port %>  METEOR_SETTINGS=$(</var/www/settings/<%= @meteor_setting_json %>) node main.js
