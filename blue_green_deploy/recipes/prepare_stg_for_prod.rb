@@ -37,6 +37,8 @@ variables(
     :port => node[:submodules][:frontend][:internal_port],
     :meteor_setting_json => node[:submodules][:frontend][:prod_meteor_setting_json],
     :json => node[:submodules][:backend][:prod_json],
+    :cron_json => node[:submodules][:backend][:prod_cron_json], 
+    :backend_layer => node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0],
   )
 
 end
