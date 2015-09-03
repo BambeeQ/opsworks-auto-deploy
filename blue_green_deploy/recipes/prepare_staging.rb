@@ -250,6 +250,7 @@ end
       then
       docker restart app1
       fi
+      docker exec app1 ./swf/bin/cleanup --settings #{node[:cleanup_json]} --domain #{node[:cleanup_domain]}
 
     EOH
   end
