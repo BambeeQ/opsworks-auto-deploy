@@ -51,7 +51,7 @@ node[:submodules][:backend][:instance_count].times do |index|
       docker restart app#{index}
     EOH
   end
-
+if index = 0
 if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
   template "/var/www/backend/current/cron.sh" do
       source "cron.erb"
@@ -72,7 +72,7 @@ if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances
     end
 end
 end
-
+end
 
 
 

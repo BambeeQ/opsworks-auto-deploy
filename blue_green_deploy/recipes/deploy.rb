@@ -198,7 +198,7 @@ node[:submodules][:backend][:instance_count].times do |index|
       fi
     EOH
   end
-
+if index = 0
 if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
 	template "/var/www/backend/release/#{time}/cron.sh" do
 			source "cron.erb"
@@ -219,7 +219,7 @@ if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances
 		end
 end
 end
-
+end
 
 else
 Chef::Log.warn("Wrong layer selection")
