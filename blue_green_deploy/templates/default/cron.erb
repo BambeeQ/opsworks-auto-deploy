@@ -1,0 +1,3 @@
+#!/bin/bash
+PM2_KILL_TIMEOUT=300000 pm2 ping
+pm2 start -x <%= @cron_json %>  --watch --no-daemon

@@ -97,7 +97,7 @@ node[:submodules][:frontend][:instance_count].times do |index|
       then
       docker restart app#{index}
       fi
- 
+
     EOH
   end
 end
@@ -199,6 +199,28 @@ node[:submodules][:backend][:instance_count].times do |index|
     EOH
   end
 end
+
+if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0] == node["opsworks"]["instance"]["hostname"]
+	template "/var/www/backend/release/#{time}/cron.sh" do
+			source "cron.erb"
+			user "root"
+			group "root"
+			mode 777
+	variables(
+			:cron_json =>  node[:submodules][:backend][:stage_cron_json],
+			:backend_layer => node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0],
+	)
+		end
+		script "run_cron_json" do
+			interpreter "bash"
+			user "root"
+			code <<-EOH
+				docker exec app0 sh cron.sh &
+			EOH
+		end
+end
+
+
 
 else
 Chef::Log.warn("Wrong layer selection")

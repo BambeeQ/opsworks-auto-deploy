@@ -4,8 +4,4 @@ PM2_KILL_TIMEOUT=300000 pm2 ping
 MONGO_URL=<%= @mongo_url %> ROOT_URL=<%= @root_url %> MAIL_URL=<%= @mail_url %> PORT=<%= @port %>  METEOR_SETTINGS=$(</var/www/settings/<%= @meteor_setting_json %>) node main.js
 <% elsif  node[:opsworks][:instance][:layers][0]==node[:submodules][:backend][:layer] -%>
 pm2 start -x <%= @json %>  --watch --no-daemon
-<% if @backend_layer==node[:opsworks][:instance][:hostname] -%>
-pm2 start -x <%= @cron_json %>  --watch --no-daemon
 <% end -%>
-<% end -%>
-
