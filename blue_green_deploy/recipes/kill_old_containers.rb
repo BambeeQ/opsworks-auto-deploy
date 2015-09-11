@@ -16,15 +16,12 @@ else
      if [ "$status" = "true" ]
      then
         docker exec $id pm2 sendSignal SIGQUIT all
-        id_count=`docker exec $id pm2 status all | awk '{print $5}' | wc -l`
-        id_count=`expr $id_count - 2`
-        i=4
-        j=0
-        while [ $i -le $id_count ]
+        id_count=`docker exec $id pm2 status all | awk -F '│' '{print $6}'|grep -vE '(^$|status)'|wc -l`
+        i=0
+        while [ $i -lt $id_count ]
         do
-          docker exec $id pm2 stop $j &
-	  i=`expr $i + 1`
-          j=`expr $j + 1`
+          docker exec $id pm2 stop $i &
+          i=`expr $i + 1`
         done
      else
           echo "service is not running"
@@ -35,21 +32,22 @@ else
     status=`docker inspect --format '{{ .State.Running }}' $id`
     if [ "$status" = "true" ]
     then
-       id_count=`docker exec $id pm2 status all | awk '{print $11}' | wc -l`
-       id_count=`expr $id_count - 2`
-       i=4
-       while [ $i -le $id_count ]
+       id_count=`docker exec $id pm2 status all | awk -F '│' '{print $6}'|grep -vE '(^$|status)'|wc -l`
+       taskdone=0
+       while [ $taskdone -ne 1 ]
        do
-         status=`docker exec $id pm2 status all | awk 'NR=='$i'{print $11}'`
-         if [ $status = "stopped" ]
+         stopped_count=`docker exec $id pm2 status all | awk -F '│' '{print $6}'|grep -vE '(^$|status)'|grep 'stopped' |wc -l`
+         if [ $stopped_count -eq $id_count ]
          then
-           i=`expr $i + 1`
-	 fi
-	 sleep 5s
+           taskdone=1
+         else
+           sleep 5s
+         fi
        done
      else
        echo "service is not running"
      fi
+
    done
 fi
  EOH
