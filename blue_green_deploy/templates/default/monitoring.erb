@@ -1,0 +1,9 @@
+#!/bin/bash
+WORKER=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[worker\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+DECIDER=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[decider\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+CRON=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[cron\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "Prod_Worker" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>" --value $WORKER`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "Prod_Decider" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>" --value $DECIDER`
+<% if node[:opsworks][:instance][:layers][0]==node[:submodules][:backend][:layer] -%>
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "Prod_Cron" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>" --value $CRON`
+<% end -%>
