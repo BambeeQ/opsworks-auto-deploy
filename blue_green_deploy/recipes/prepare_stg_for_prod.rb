@@ -79,3 +79,24 @@ end
 else
 Chef::Log.warn("Wrong layer selection")
 end
+
+
+template "/root/monitoring.sh" do
+    source "monitoring.erb"
+    user "root"
+    group "root"
+    mode 777
+   variables(
+    :env =>  node[:prod_env],
+)
+  end
+
+
+cron 'process_monitoring' do
+  minute '*/5'
+  hour '*'
+  weekday '*'
+  user 'root'
+  command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
+  action :create
+end

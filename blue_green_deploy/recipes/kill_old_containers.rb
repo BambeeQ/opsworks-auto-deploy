@@ -53,3 +53,12 @@ fi
  EOH
 end
 end
+
+cron 'process_monitoring' do
+  minute '*/5'
+  hour '*'
+  weekday '*'
+  user 'root'
+  command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
+  action :delete
+end
