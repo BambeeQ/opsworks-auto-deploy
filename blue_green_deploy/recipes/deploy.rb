@@ -101,6 +101,27 @@ node[:submodules][:frontend][:instance_count].times do |index|
     EOH
   end
 end
+template "/root/monitoring.sh" do
+    source "monitoring.erb"
+    user "root"
+    group "root"
+    mode 777
+   variables(
+    :env =>  node[:stage_env],
+		:InstanceID => node[:opsworks][:instance][:aws_instance_id],
+		:backend_instance => node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0],
+)
+  end
+
+
+cron 'process_monitoring' do
+  minute '*/5'
+  hour '*'
+  weekday '*'
+  user 'root'
+  command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
+  action :create
+end
 
 
 elsif node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
@@ -220,12 +241,6 @@ if node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances
 end
 end
 end
-
-else
-Chef::Log.warn("Wrong layer selection")
-end
-
-
 template "/root/monitoring.sh" do
     source "monitoring.erb"
     user "root"
@@ -234,6 +249,7 @@ template "/root/monitoring.sh" do
    variables(
     :env =>  node[:stage_env],
 		:InstanceID => node[:opsworks][:instance][:aws_instance_id],
+		:backend_instance => node[:opsworks][:layers]["#{node[:submodules][:backend][:layer]}"][:instances].first[0],
 )
   end
 
@@ -245,4 +261,8 @@ cron 'process_monitoring' do
   user 'root'
   command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
   action :create
+end
+
+else
+Chef::Log.warn("Wrong layer selection")
 end

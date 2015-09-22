@@ -6,6 +6,6 @@ DISK_SPACE=`df -P / |awk 'NR==2{print$5}'| sed 's/%//'`
 `/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Worker" --value $WORKER --unit "Count"`
 `/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Decider" --value $DECIDER --unit "Count"`
 `/usr/local/bin/aws cloudwatch put-metric-data --metric-name Disk_Space --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Disk_Space" --value $DISK_SPACE --unit "Percent"`
-<% if node[:opsworks][:instance][:layers][0]==node[:submodules][:backend][:layer] -%>
+<% if @backend_instance==node["opsworks"]["instance"]["hostname"] -%>
 `/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,App_name=Cron" --value $CRON --unit "Count"`
 <% end -%>
