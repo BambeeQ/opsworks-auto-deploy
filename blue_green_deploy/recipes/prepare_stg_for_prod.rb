@@ -88,6 +88,7 @@ template "/root/monitoring.sh" do
     mode 777
    variables(
     :env =>  node[:prod_env],
+    :InstanceID => node[:opsworks][:instance][:aws_instance_id],
 )
   end
 

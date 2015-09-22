@@ -1,9 +1,11 @@
 #!/bin/bash
-WORKER=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[worker\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
-DECIDER=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[decider\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
-CRON=`docker exec -i -t app0 bash -c "pm2 status all"|grep '\[cron\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
-`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Worker" --value $WORKER`
-`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Decider" --value $DECIDER`
+WORKER=`docker exec -i  app0 bash -c "pm2 status all"|grep '\[worker\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+DECIDER=`docker exec -i  app0 bash -c "pm2 status all"|grep '\[decider\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+CRON=`docker exec -i  app0 bash -c "pm2 status all"|grep '\[cron\]'|awk -F'│' '{print $6;}'|grep 'online' | wc -l`
+DISK_SPACE=`df -P / |awk 'NR==2{print$5}'| sed 's/%//'`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Worker" --value $WORKER --unit "Count"`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Decider" --value $DECIDER --unit "Count"`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name Disk_Space --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Disk_Space" --value $DISK_SPACE --unit "Percent"`
 <% if node[:opsworks][:instance][:layers][0]==node[:submodules][:backend][:layer] -%>
-`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %>,InstanceID=<%= @InstanceID %>,App_name=Cron" --value $CRON`
+`/usr/local/bin/aws cloudwatch put-metric-data --metric-name OnlineCount --namespace "APP_Metrics" --dimensions "Env=<%= @env %,App_name=Cron" --value $CRON --unit "Count"`
 <% end -%>
