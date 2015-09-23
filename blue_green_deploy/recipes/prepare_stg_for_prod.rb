@@ -48,6 +48,7 @@ bash "cloud_alarm" do
  user "root"
  group "root"
  code <<-EOH
+aws cloudwatch put-metric-alarm --alarm-name #{node[:prod_env]}_Decider --alarm-description "Alarm when Decider count lessthan #{node[:prod_app_count_threshold]}" --metric-name  OnlineCount --namespace APP_Metrics --statistic Average --period 300 --threshold #{node[:prod_app_count_threshold]} --comparison-operator LessThanThreshold  --dimensions '[{"Name":"InstanceID","Value":"#{node[:opsworks][:instance][:aws_instance_id]}"},{"Name":"Env","Value":"Prod"},{"Name":"App_name","Value":"App"}]' --evaluation-periods 1 --alarm-actions #{node[:arn_sns_details]} --unit Count
 aws cloudwatch put-metric-alarm --alarm-name #{node[:prod_env]}_Disk_Space --alarm-description "Alarm when Disk space exceeds #{node[:prod_disk_space_threshold]} percent" --metric-name  Disk_Space --namespace APP_Metrics --statistic Average --period 300 --threshold #{node[:prod_disk_space_threshold]} --comparison-operator GreaterThanThreshold  --dimensions '[{"Name":"InstanceID","Value":"#{node[:opsworks][:instance][:aws_instance_id]}"},{"Name":"Env","Value":"Prod"},{"Name":"App_name","Value":"Disk_Space"}]' --evaluation-periods 1 --alarm-actions #{node[:arn_sns_details]} --unit Percent
 EOH
 end
