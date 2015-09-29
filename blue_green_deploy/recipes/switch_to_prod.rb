@@ -3,21 +3,21 @@ service "nginx" do
   action :nothing # only define so that it can be restarted if the config changed
 end
 
-rest = Chef::REST.new("#{node[:prod_ghostscript_url]}")
-nodes = rest.get_rest("#{node[:prod_ghostscript_url]}")
-data = nodes['data']
-def checkPassing(data)
- data.each do |value|
-         if value['passing'] == false
-         return false
-      end
-  end
-  return true
-end
-passing = checkPassing(data)
+#rest = Chef::REST.new("#{node[:prod_ghostscript_url]}")
+#nodes = rest.get_rest("#{node[:prod_ghostscript_url]}")
+#data = nodes['data']
+#def checkPassing(data)
+# data.each do |value|
+#         if value['passing'] == false
+#         return false
+#      end
+#  end
+#  return true
+#end
+#passing = checkPassing(data)
 
-if passing == true
-Chef::Log.info("Success")
+#if passing == true
+#Chef::Log.info("Success")
 
 file "/etc/nginx/sites-available/#{node[:prod_domain_name]}.conf" do
   owner 'root'
@@ -79,6 +79,6 @@ execute "echo 'checking if nginx is not running - if so start it'" do
   notifies :start, "service[nginx]"
 end
 
-else 
-Chef::Application.fatal!("failed")
-end
+#else
+#Chef::Application.fatal!("failed")
+#end
