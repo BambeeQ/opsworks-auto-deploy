@@ -33,6 +33,7 @@ else
     if [ "$status" = "true" ]
     then
        id_count=`docker exec $id pm2 status all | awk -F '│' '{print $6}'|grep -vE '(^$|status)'|wc -l`
+       id_count=`expr $id_count - 2`
        taskdone=0
        while [ $taskdone -ne 1 ]
        do
