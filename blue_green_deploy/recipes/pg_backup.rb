@@ -1,4 +1,5 @@
 require 'aws-sdk'
+if node[:opsworks][:instance][:layers][0].to_s == "#{node[:backup_layer]}"
 time = Time.now.strftime("%Y%m%d%H%M%S")
 get_id = `id -u deploy`
 get_id = get_id.delete!("\n")
@@ -22,4 +23,7 @@ Dir.chdir("/tmp/")
 		end
 else
   Chef::Log.warn("Backup failed")
+end
+else
+Chef::Log.warn("This is not backup layer")
 end
