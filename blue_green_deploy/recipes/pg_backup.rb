@@ -16,7 +16,7 @@ Dir.chdir("/tmp/")
 			# Set bucket and object name
 			key = File.basename("pg_#{get_id}_#{time}.tar.gz")
 			upload_status = s3.buckets["#{node[:backup_bucket_name]}"].objects[key].write(:file => "pg_#{get_id}_#{time}.tar.gz")
-                        system("echo 'Postgres database backup upload completed \n s3://#{node[:backup_bucket_name]}/pg_#{get_id}_#{time}.tar.gz' | mail -s 'Postgres database backup upload completed' #{node[:mail_id]}")
+                        system("echo 'Postgres database backup upload completed \n https://s3.amazonaws.com/#{node[:backup_bucket_name]}/pg_#{get_id}_#{time}.tar.gz' | mail -s 'Postgres database backup upload completed' #{node[:mail_id]}")
                         system("rm -rf  pg_#{get_id}_#{time}*")
 		else
 			Chef::Log.warn("Compresion failed")

@@ -15,7 +15,7 @@ if  backup_status == true
 			# Set bucket and object name
 			key = File.basename("mongo_#{get_id}_#{time}.tar.gz")
 			upload_status = s3.buckets["#{node[:backup_bucket_name]}"].objects[key].write(:file => "mongo_#{get_id}_#{time}.tar.gz")
-                        system("echo 'Mongodb backup upload completed \n s3://#{node[:backup_bucket_name]}/mongo_#{get_id}_#{time}.tar.gz' | mail -s 'Mongodb backup upload completed' #{node[:mail_id]}")
+                        system("echo 'Mongodb backup upload completed \n https://s3.amazonaws.com/#{node[:backup_bucket_name]}/mongo_#{get_id}_#{time}.tar.gz' | mail -s 'Mongodb backup upload completed' #{node[:mail_id]}")
                         system("rm -rf  mongo_#{get_id}_#{time}*")
 		else
 			Chef::Log.warn("Compresion failed")
