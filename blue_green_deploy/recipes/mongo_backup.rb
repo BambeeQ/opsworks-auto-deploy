@@ -3,9 +3,9 @@ if node[:opsworks][:instance][:layers][0].to_s == "#{node[:backup_layer]}"
 time = Time.now.strftime("%Y%m%d%H%M%S")
 get_id = `id -u deploy`
 get_id = get_id.delete!("\n")
-dir_create = system("mkdir /tmp/mongo_#{get_id}_#{time}")
-Dir.chdir("/tmp/")
-backup_status = system("mongodump -h #{node[:mongodb_host]} -d #{node[:mongodb_prod_db]} -u #{node[:mongodb_prod_username]} -p #{node[:mongodb_prod_password]} -o /tmp/mongo_#{get_id}_#{time} ")
+dir_create = system("mkdir -p /data/mongo_#{get_id}_#{time}")
+Dir.chdir("/data/")
+backup_status = system("mongodump -h #{node[:mongodb_host]} -d #{node[:mongodb_prod_db]} -u #{node[:mongodb_prod_username]} -p #{node[:mongodb_prod_password]} -o /data/mongo_#{get_id}_#{time} ")
 if  backup_status == true
     compression_status = system("tar cvf mongo_#{get_id}_#{time}.tar.gz mongo_#{get_id}_#{time}")
 		if compression_status == true
@@ -19,9 +19,11 @@ if  backup_status == true
                         system("rm -rf  mongo_#{get_id}_#{time}*")
 		else
 			Chef::Log.warn("Compresion failed")
+      system("echo 'Mongodb database backup failed \n' | mail -s 'Mongodb database backup failed' #{node[:mail_id]}")
 		end
 else
   Chef::Log.warn("Backup failed")
+  system("echo 'Mongodb database backup failed \n' | mail -s 'Mongodb database backup failed' #{node[:mail_id]}")
 end
 else
 Chef::Log.warn("This is not backup layer")
