@@ -1,6 +1,6 @@
 #!/bin/bash
-#echo "<%= node[:host_entry_ip] %> <%= node[:host_entry_3dcart] %>" >> /etc/hosts
-#echo "<%= node[:host_entry_ip] %> <%= node[:host_entry_freshdesk] %>" >> /etc/hosts
+echo "<%= node[:host_entry_ip] %> <%= node[:host_entry_3dcart] %>" >> /etc/hosts
+echo "<%= node[:host_entry_ip] %> <%= node[:host_entry_freshdesk] %>" >> /etc/hosts
 PM2_KILL_TIMEOUT=300000 pm2 ping
 pm2 install pm2-logrotate
 pm2 set pm2-logrotate:max_size 10240 pm2 set pm2-logrotate:retain 7
