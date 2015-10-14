@@ -1,3 +1,12 @@
+cron 'process_monitoring' do
+  minute '*/5'
+  hour '*'
+  weekday '*'
+  user 'root'
+  command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
+  action :delete
+end
+
 if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}" ||  node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:backend][:layer]}"
 
 script "kill_all_containers" do
@@ -55,11 +64,3 @@ fi
 end
 end
 
-cron 'process_monitoring' do
-  minute '*/5'
-  hour '*'
-  weekday '*'
-  user 'root'
-  command "/bin/sh -x  /root/monitoring.sh >/dev/null 2>&1"
-  action :delete
-end
