@@ -13,10 +13,16 @@ Dir.chdir("/data/")
 		if compression_status == true
 			#Deploy code to release directory
 			s3 = AWS::S3.new
-			# Set bucket and object name
-			key = File.basename("pg_#{get_id}_#{time}.tar.gz")
-			upload_status = s3.buckets["#{node[:backup_bucket_name]}"].objects[key].write(:file => "pg_#{get_id}_#{time}.tar.gz")
-                        system("echo 'Postgres database backup upload completed \n https://s3.amazonaws.com/#{node[:backup_bucket_name]}/pg_#{get_id}_#{time}.tar.gz' | mail -s 'Postgres database backup upload completed' #{node[:mail_id]}")
+                        upload_status = system("aws --profile=backup s3 cp /data/pg_#{get_id}_#{time}.tar.gz s3://#{node[:backup_bucket_name]}/ --grants read=uri=http://acs.amazonaws.com/groups/global/AuthenticatedUsers")
+                      
+			 if upload_status == true
+                              object = s3.buckets["#{node[:backup_bucket_name]}"].objects["pg_#{get_id}_#{time}.tar.gz"]
+                              get_url = object.url_for(:read, { :expires => 86400, :secure => true }).to_s
+			       system("echo 'Postgres database backup upload completed \n\n User Authentication URL: https://s3.amazonaws.com/#{node[:backup_bucket_name]}/pg_#{get_id}_#{time}.tar.gz \n\n 24hours session url: \n #{get_url}' | mail -s 'Postgres database backup upload completed' #{node[:mail_id]}")
+                        else
+                           system("echo 'Postgres database backup upload failed \n' | mail -s 'Postgres database backup upload failed' #{node[:mail_id]}")
+                        end
+
                         system("rm -rf  pg_#{get_id}_#{time}*")
 		else
 			Chef::Log.warn("Compresion failed")
