@@ -1,4 +1,5 @@
 require 'aws-sdk'
+if !node[:submodules][:frontend][:layer].empty? && !node[:submodules][:backend][:layer].empty?
 #checking frontend layer
 if node[:opsworks][:instance][:layers][0].to_s == "#{node[:submodules][:frontend][:layer]}"
 
@@ -266,3 +267,7 @@ end
 else
 Chef::Log.warn("Wrong layer selection")
 end
+else
+Chef::Log.warn("layer is not metioned")
+end
+

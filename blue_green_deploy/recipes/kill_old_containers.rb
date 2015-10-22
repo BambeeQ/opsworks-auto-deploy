@@ -1,3 +1,4 @@
+if !node[:submodules][:frontend][:layer].empty? && !node[:submodules][:backend][:layer].empty?
 cron 'process_monitoring' do
   minute '*/5'
   hour '*'
@@ -62,5 +63,8 @@ else
 fi
  EOH
 end
+end
+else
+Chef::Log.warn("layer is not metioned")
 end
 
