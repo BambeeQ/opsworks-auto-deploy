@@ -54,7 +54,7 @@ while  taskdone != 1 do
            taskdone=1
          else
            system("sleep 5s")
-           Chef::Log.warn(instance_status)
+           #Chef::Log.warn(instance_status)
 	   start_status = opsworks.describe_instances({
   instance_ids: [frontend_status[index]],
 })
@@ -75,7 +75,7 @@ while  taskdone != 1 do
            taskdone=1
          else
            system("sleep 5s")
-           Chef::Log.warn(instance_status)
+           #Chef::Log.warn(instance_status)
            start_status = opsworks.describe_instances({
   instance_ids: [backend_status[index]],
 })
